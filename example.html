@@ -1,0 +1,50 @@
+<!doctype html>
+
+<html lang="pl">
+<head>
+  <meta charset="utf-8">
+
+  <title>Opening Hours example</title>
+  
+<style>
+.with-border {
+	border: 1px solid black;
+	padding: 10px;
+	max-width: 300px;
+	margin-bottom: 10px;
+	margin-top: 5px;
+}
+</style>
+  <!--[if lt IE 9]>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv.js"></script>
+  <![endif]-->
+</head>
+
+<body>
+<h1>Opening hours example</h1>
+
+Current status: <div class="with-border current-status-placeholder"></div>
+We close/open: <div class="with-border closing-in-placeholder"></div>
+
+  <script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.21.0/moment-with-locales.min.js"></script>
+  
+  <script src="opening-hours.js"></script>
+  <script>
+  
+  var data = [];
+  data[0] = [[10,14]]; // holidays - currently not implemented
+  data[1] = [[8.30, 18.30]]; // monday (beware! 8.30 means 08:30, using decimal part than is bigger than 59 will generate warning!
+  data[2] = [[8.30, 18.30]]; // tuesday
+  data[3] = [[6.30, 18.30]]; // wednesday
+  data[4] = [[6,12.59],[16.35,16.39],[18.30, 19.30]]; // thursday
+  data[5] = [[8.30, 18.30]]; // friday
+  data[6] = [[8.30, 12],[14,18]]; // saturday
+  data[7] = []; // sunday = closed (optional, if entry for a day is empty, it's assumed that it is closed)
+  
+  
+	$('.current-status-placeholder').openingHours({ show: 'current-status', hours: data });
+	$('.closing-in-placeholder').openingHours({ show: 'closing-in', hours: data});
+  </script>
+</body>
+</html>
