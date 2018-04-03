@@ -15,6 +15,17 @@
         minutes: 'min.',
         and: ''
     };
+
+    var daysMap = {
+        1: 'monday',
+        2: 'tuesday',
+        3: 'wednesday',
+        4: 'thursday',
+        5: 'friday',
+        6: 'saturday',
+        7: 'sunday'
+    };
+
     /**
      * constants
      */
@@ -25,6 +36,16 @@
         var minutes = 100 * (hourWithMinutes - hours);
         return Math.floor(hours * 60 + minutes);
     }
+
+    var addMessages = function (data) {
+        if (data.messages) {
+            $.each(messages, function (key) {
+                if (data.messages[key]) {
+                    messages[key] = data.messages[key];
+                }
+            })
+        }
+    };
 
     var hourInsideRange = function (hour, range) {
         if ($.isArray(range)) {
@@ -74,7 +95,7 @@
         }
         var selectedDay = moment().add(plusDays, 'd');
         var weekDay = selectedDay.isoWeekday();
-        return data.hours[weekDay];
+        return data.hours[daysMap[weekDay]];
     };
 
     var getClosingIn = function (data) {
@@ -91,10 +112,9 @@
         function getHours(type) {
             var value;
             var settings;
-            var i;
             var typeIndex = type === 'open' ? 1 : 0;
             var currentHour = getCurrentHourFormatted();
-            for (i = 0; i < searchLimit; i++) {
+            for (var i = 0; i < searchLimit; i++) {
                 settings = getSettingsForToday(data, i);
                 if (settings) {
                     for (var j = 0; j < settings.length; j++) {
@@ -102,7 +122,7 @@
                         if (!value) break;
                         if (!value.length) continue;
                         if (i > 0 || after(value[typeIndex], currentHour)) {
-                            return {openingIn: toMinutes(24) * i + toMinutes(value[typeIndex]) - toMinutes(currentHour)};
+                            return toMinutes(24) * i + toMinutes(value[typeIndex]) - toMinutes(currentHour);
                         }
                     }
                 }
@@ -174,23 +194,24 @@
     var validateData = function (data) {
         if (!data) console.warn('options object is undefined!');
         if (!data.hours) console.warn('undefined hours!');
-        for (var i = 0; i < data.hours.length; i++) {
-            if ($.isArray(data.hours[i])) {
-                for (var j = 0; j < data.hours[i].length; j++) {
-                    var h = data.hours[i][j];
-                    if (!$.isArray(h)) console.warn('object "' + h + '" in weekday "' + i + '" is not an array!');
-                    else if (h.length !== 2) console.warn('array of hours for weekday "' + i + '" is not of length 2 (opening and closing hour)');
+        $.each(data.hours, function(key, values){
+            if ($.isArray(values)) {
+                for (var j = 0; j < values.length; j++) {
+                    var h = values[j];
+                    if (!$.isArray(h)) console.warn('object "' + h + '" in weekday "' + key + '" is not an array!');
+                    else if (h.length !== 2) console.warn('array of hours for weekday "' + key + '" is not of length 2 (opening and closing hour)');
                     else {
                         validateHour(h[0]);
                         validateHour(h[1]);
                     }
                 }
             }
-        }
+        });
     };
 
     $.fn.openingHours = function (data) {
         validateData(data);
+        addMessages(data);
         return this.append(getFormattedResult(data));
     };
 
