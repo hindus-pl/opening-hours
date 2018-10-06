@@ -169,10 +169,10 @@
     if (data.show === 'closing-in') {
       var closingIn = getClosingIn(data);
       if (closingIn.closingIn) {
-        return messages['closing_in'] + ' ' + formatIn(closingIn.closingIn);
+        return messages.closing_in + ' ' + formatIn(closingIn.closingIn);
       }
       if (closingIn.openingIn) {
-        return messages['opening_in'] + ' ' + formatIn(closingIn.openingIn);
+        return messages.opening_in + ' ' + formatIn(closingIn.openingIn);
       }
       return 'Unknown!';
     }
@@ -183,36 +183,56 @@
     return messages['closed'];
   };
 
-  var validateHour = function (formattedHour) {
-    var hourPart = Math.floor(formattedHour);
-    var minutePart = Math.floor((minutePart - hourPart) * 100);
-    if (hourPart > 23) console.warn('invalid time format (hour part > 23) in ' + formattedHour);
-    if (hourPart < 0) console.warn('invalid time format (hour part < 0) in ' + formattedHour);
-    if (minutePart > 59) console.warn('invalid time format (minute part > 59) in ' + formattedHour);
-  };
-
   var validateData = function (data) {
-    if (!data) console.warn('options object is undefined!');
-    if (!data.hours) console.warn('undefined hours!');
+    if (!data) {
+      throw 'options object is undefined!';
+    }
+    if (!data.hours) {
+      throw 'undefined hours!';
+    }
     $.each(data.hours, function (key, values) {
-      if ($.isArray(values)) {
-        for (var j = 0; j < values.length; j++) {
-          var h = values[j];
-          if (!$.isArray(h)) console.warn('object "' + h + '" in weekday "' + key + '" is not an array!');
-          else if (h.length !== 2) console.warn('array of hours for weekday "' + key + '" is not of length 2 (opening and closing hour)');
-          else {
-            validateHour(h[0]);
-            validateHour(h[1]);
-          }
+      if (!$.isArray(values)) {
+          throw 'hours values should be array!'
+      }
+      for (var j = 0; j < values.length; j++) {
+        var hours = values[j];
+        if (!$.isArray(hours)) {
+          throw ('element "' + hours + '" in weekday "' + key + '" is not an array!');
         }
+        if (hours.length !== 2) {
+          throw ('array of hours for weekday "' + key + '" is not of length 2 (opening and closing hour)');
+        }
+        validateHour(hours[0]);
+        validateHour(hours[1]);
       }
     });
+    function validateHour(formattedHour) {
+      var hourPart = Math.floor(formattedHour);
+      var minutePart = Math.floor(((100*formattedHour) - (hourPart*100)));
+      if (hourPart > 23) {
+        throw('invalid time format (hour part > 23) in ' + formattedHour);
+      }
+      if (hourPart < 0) {
+        throw('invalid time format (hour part < 0) in ' + formattedHour);
+      }
+      if (minutePart > 59) {
+        throw('invalid time format (minute part > 59) in ' + formattedHour);
+      }
+    }
   };
 
+  function renderOutput($container, data){
+    return $container.append(data);
+  }
   $.fn.openingHours = function (data) {
-    validateData(data);
-    addMessages(data);
-    return this.append(getFormattedResult(data));
+    try{
+      validateData(data);
+      addMessages(data);
+      return renderOutput(this, getFormattedResult(data));
+    }catch(e){
+      console.warn(e);
+      return renderOutput(this, 'Error!');
+    }
   };
 
 })(jQuery);
