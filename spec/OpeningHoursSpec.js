@@ -25,7 +25,7 @@ define(['jquery', 'moment'], function ($, moment) {
       });
       it('should show closed', function (done) {
         defaultConf.hours = [];
-        expected = 'closed';
+        expected = 'Error!';
         testByDateAndHtml('08-10-2018 12:00', done);
       });
       describe('hours errors', function(){
@@ -76,18 +76,6 @@ define(['jquery', 'moment'], function ($, moment) {
           ];
           checkConsoleWarn('invalid time format (minute part > 59) in 12.6', done);
         });
-      });
-
-      it('should show XXXX error when XXXX', function (done) {
-        defaultConf = {
-          show: 'test',
-          hours: {
-            monday: [
-              1,2,3,4
-            ]
-          }
-        };
-        checkConsoleWarn('hours values should be array!', done);
       });
       function checkConsoleWarn(value, done){
         spyOn(console, 'warn').and.callFake(function(consoleWarn){
@@ -156,9 +144,13 @@ define(['jquery', 'moment'], function ($, moment) {
           expected = 'we are opening tomorrow at 8:30';
           testByDateAndHtml('07-10-2018 17:40', done);
         });
-        it('should show opening in two days', function (done) {
-          expected = 'we are opening in two days at 8:30';
+        it('should show opening in Monday', function (done) {
+          expected = 'we are opening in Monday at 8:30';
           testByDateAndHtml('06-10-2018 17:40', done);
+        });
+        it('should show opening in two hours', function (done) {
+          expected = 'we are opening in 2 h. at 8:30';
+          testByDateAndHtml('08-10-2018 6:30', done);
         });
       });
       describe('closing in', function(){
@@ -177,6 +169,11 @@ define(['jquery', 'moment'], function ($, moment) {
       window.moment = function () {
         return moment(date, 'DD-MM-YYYY hh:mm')
       };
+      window.moment.duration = moment.duration;
+      window.moment.locale = moment.locale;
+      window.moment.defineLocale = moment.defineLocale;
+      window.moment.updateLocale = moment.updateLocale;
+      window.moment.locales = moment.locales;
       registerOpeningHours(function () {
         $defaultDiv.openingHours(defaultConf);
         expect($defaultDiv.html()).toBe(expected);

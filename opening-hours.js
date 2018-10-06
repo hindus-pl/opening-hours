@@ -1,4 +1,5 @@
 (function ($) {
+  var WEEK_DAYS_LENGTH = 7;
   /**
    * messages ready for translations
    */
@@ -13,7 +14,16 @@
     at: 'at',
     hours: 'h.',
     minutes: 'min.',
-    and: ''
+    and: '',
+    weekDays: [
+      'Sunday',
+      'Monday',
+      'Tuesday',
+      'Wednesday',
+      'Thursday',
+      'Friday',
+      'Saturday'
+    ]
   };
 
   var daysMap = {
@@ -26,46 +36,32 @@
     7: 'sunday'
   };
 
-  /**
-   * constants
-   */
-  var searchLimit = 7;
+  function getSettingsForToday(hours, plusDays) {
+    if (!plusDays) {
+      plusDays = 0;
+    }
+    var selectedDay = moment().add(plusDays, 'd');
+    var weekDay = selectedDay.isoWeekday();
+    return hours[daysMap[weekDay]];
+  }
+
+  function getCurrentHourFormatted() {
+    var now = moment().format('H.mm');
+    return parseFloat(now);
+  }
+
+  function daysInMinutes(days) {
+    return toMinutes(24) * days;
+  }
 
   function toMinutes(hourWithMinutes) {
     var hours = Math.floor(hourWithMinutes);
-    var minutes = 100 * (hourWithMinutes - hours);
+    var minutes = Math.round(hourWithMinutes * 100) - Math.round(100 * hours);
     return Math.floor(hours * 60 + minutes);
   }
 
-  var addMessages = function (data) {
-    if (data.messages) {
-      $.each(messages, function (key) {
-        if (data.messages[key]) {
-          messages[key] = data.messages[key];
-        }
-      })
-    }
-  };
-
-  var hourInsideRange = function (hour, range) {
-    if ($.isArray(range)) {
-      var fromEncoded = range[0];
-      var toEncoded = range[1];
-
-      var fromMinutesCnt = toMinutes(fromEncoded);
-      var toMinutesCnt = toMinutes(toEncoded);
-
-      var hourMinutes = toMinutes(hour);
-
-      return hourMinutes >= fromMinutesCnt && hourMinutes <= toMinutesCnt;
-
-    } else {
-      return false;
-    }
-  };
-
-  var getCurrentStatus = function (data) {
-    var values = getSettingsForToday(data);
+  function isCurrentlyOpen(hours) {
+    var values = getSettingsForToday(hours);
     if (values) {
       var status = false;
       var now = getCurrentHourFormatted();
@@ -73,56 +69,96 @@
         status = status || hourInsideRange(now, value);
       });
       return status;
-    } else {
-      return false;
-    } // no entry
-  };
-
-  var getCurrentHourFormatted = function () {
-    var now = moment().format('H.mm');
-    return parseFloat(now);
-  };
-
-  var after = function (what, afterWhat) {
-    var whatToMinutes = toMinutes(what);
-    var afterWhatToMinutes = toMinutes(afterWhat);
-    return whatToMinutes > afterWhatToMinutes;
-  };
-
-  var getSettingsForToday = function (data, plusDays) {
-    if (!plusDays) {
-      plusDays = 0;
     }
-    var selectedDay = moment().add(plusDays, 'd');
-    var weekDay = selectedDay.isoWeekday();
-    return data.hours[daysMap[weekDay]];
-  };
+    return false;
 
-  var getClosingIn = function (data) {
-    var currentStatus = getCurrentStatus(data);
-    if (currentStatus) {
+    function hourInsideRange(hour, range) {
+      if ($.isArray(range)) {
+        var fromEncoded = range[0];
+        var toEncoded = range[1];
+
+        var fromMinutesCnt = toMinutes(fromEncoded);
+        var toMinutesCnt = toMinutes(toEncoded);
+
+        var hourMinutes = toMinutes(hour);
+
+        return hourMinutes >= fromMinutesCnt && hourMinutes <= toMinutesCnt;
+
+      } else {
+        return false;
+      }
+    }
+  }
+
+  var closingInAction = function (hours) {
+    var closingIn = getTimeToCloseOrOpen(hours);
+    if (closingIn.closingIn) {
+      return messages.closing_in + ' ' + formatIn(closingIn.closingIn);
+    }
+    if (closingIn.openingIn) {
+      return messages.opening_in + ' ' + formatIn(closingIn.openingIn);
+    }
+    return 'Unknown!';
+
+    function formatIn(momentInMinutes) {
+      var messageParts = [];
+      var destinationTime = moment().add(momentInMinutes, 'minutes');
+      if (destinationTime.isSame(moment(), 'day')) {
+        var diffTime = destinationTime.diff(moment());
+        var durationTime = moment.duration(diffTime);
+        var durationInHours = durationTime.asHours();
+        var durationInMinutes = durationTime.asMinutes();
+        messageParts.push(messages.in);
+        if (durationInHours >= 1) {
+          var hoursOnly = Math.floor(durationInHours);
+          messageParts.push(hoursOnly + ' h.');
+          durationInMinutes -= hoursOnly * 60;
+        }
+        if (durationInMinutes >= 1) {
+          messageParts.push(durationInMinutes + ' min.');
+        }
+        messageParts.push(messages.at);
+        messageParts.push(destinationTime.format('H:mm'));
+        return messageParts.join(' ').trim();
+      }
+      return destinationTime.calendar(moment()).trim();
+    }
+
+    function after(what, afterWhat) {
+      var whatToMinutes = toMinutes(what);
+      var afterWhatToMinutes = toMinutes(afterWhat);
+      return whatToMinutes > afterWhatToMinutes;
+    }
+
+    function getTimeToCloseOrOpen(hours) {
+      if (isCurrentlyOpen(hours)) {
+        return {
+          closingIn: getHours('open')
+        };
+      }
       return {
-        closingIn: getHours('open')
+        openingIn: getHours('closed')
       };
-    }
-    return {
-      openingIn: getHours('closed')
-    };
 
-    function getHours(type) {
-      var value;
-      var settings;
-      var typeIndex = type === 'open' ? 1 : 0;
-      var currentHour = getCurrentHourFormatted();
-      for (var i = 0; i < searchLimit; i++) {
-        settings = getSettingsForToday(data, i);
-        if (settings) {
-          for (var j = 0; j < settings.length; j++) {
-            value = settings[j];
-            if (!value) break;
-            if (!value.length) continue;
-            if (i > 0 || after(value[typeIndex], currentHour)) {
-              return toMinutes(24) * i + toMinutes(value[typeIndex]) - toMinutes(currentHour);
+      function getHours(type) {
+        var result;
+        var plusDayIndex = 0;
+        var typeIndex = type === 'open' ? 1 : 0;
+        var currentHour = getCurrentHourFormatted();
+        for (plusDayIndex; plusDayIndex < WEEK_DAYS_LENGTH; plusDayIndex++) {
+          var daySettings = getSettingsForToday(hours, plusDayIndex);
+          if (daySettings) {
+            $.each(daySettings, function (i, hoursArray) {
+              if (!hoursArray || !hoursArray.length) {
+                return;
+              }
+              if (plusDayIndex > 0 || after(hoursArray[typeIndex], currentHour)) {
+                result = (daysInMinutes(plusDayIndex) + toMinutes(hoursArray[typeIndex]) - toMinutes(currentHour));
+                return false;
+              }
+            });
+            if (result) {
+              return result;
             }
           }
         }
@@ -130,57 +166,47 @@
     }
   };
 
-  var formatIn = function (momentInMinutes) {
-    var message = '';
-    var days = 0;
-    var now = toMinutes(getCurrentHourFormatted());
-
-    if (momentInMinutes > 24 * 60 - now) {
-      days = Math.floor((momentInMinutes - now) / (24 * 60));
-      if (days <= 1) {
-        message += messages['tomorrow'];
-      } else if (days > 1) {
-        days++;
-        message += messages['in'] + ' ' + days + ' ' + messages['days'];
-      }
-
-    } else {
-      var remainingHours = Math.floor(momentInMinutes / 60);
-      var remainingMinutes = momentInMinutes - 60 * remainingHours;
-      message += messages['in'];
-      if (remainingHours > 0) {
-        message += ' ' + remainingHours + ' ' + messages['hours'] + ' ' + messages['and'] + ' ';
-      }
-      message += remainingMinutes + ' ' + messages['minutes'];
-
+  var addMessages = function (messagesFromData) {
+    if (messagesFromData) {
+      $.each(messages, function (key) {
+        if (messagesFromData[key]) {
+          messages[key] = messagesFromData[key];
+        }
+      })
     }
-
-    // now the hour
-    var minutes = now + momentInMinutes - days * 24 * 60;
-    var fullHours = Math.floor(minutes / 60);
-    var rest = minutes % 60;
-
-    message += ' ' + messages['at'] + ' ' + fullHours + ':' + rest;
-
-    return message;
   };
 
-  var getFormattedResult = function (data) {
-    if (data.show === 'closing-in') {
-      var closingIn = getClosingIn(data);
-      if (closingIn.closingIn) {
-        return messages.closing_in + ' ' + formatIn(closingIn.closingIn);
-      }
-      if (closingIn.openingIn) {
-        return messages.opening_in + ' ' + formatIn(closingIn.openingIn);
-      }
-      return 'Unknown!';
-    }
-    // default
-    if (getCurrentStatus(data)) {
+  var currentStatusAction = function (hours) {
+    if (isCurrentlyOpen(hours)) {
       return messages['open'];
     }
     return messages['closed'];
+  };
+  var configureMoment = function () {
+    if($.inArray('ourLocale', moment.locales()) === -1){
+      moment.defineLocale('ourLocale', {parentLocale: 'pl'});
+      moment.locale('ourLocale');
+      moment.updateLocale('ourLocale', {
+        meridiem: function () {
+          return '';
+        },
+        calendar: {
+          nextDay: '[' + messages.tomorrow + '] [' + messages.at + '] H:mm',
+          sameDay: '[' + messages.at + '] H:mm',
+          nextWeek: '[' + messages.in + '] dddd [' + messages.at + '] H:mm'
+        },
+        weekdays: messages.weekDays
+      });
+    }
+  };
+  var getFormattedResult = function (data) {
+    if (data.show === 'closing-in') {
+      return closingInAction(data.hours)
+    }
+    if (data.show === 'current-status') {
+      return currentStatusAction(data.hours)
+    }
+    throw (data.show + 'is not correct option');
   };
 
   var validateData = function (data) {
@@ -192,7 +218,7 @@
     }
     $.each(data.hours, function (key, values) {
       if (!$.isArray(values)) {
-          throw 'hours values should be array!'
+        throw 'hours values should be array!'
       }
       for (var j = 0; j < values.length; j++) {
         var hours = values[j];
@@ -206,9 +232,10 @@
         validateHour(hours[1]);
       }
     });
+
     function validateHour(formattedHour) {
       var hourPart = Math.floor(formattedHour);
-      var minutePart = Math.floor(((100*formattedHour) - (hourPart*100)));
+      var minutePart = Math.floor(((100 * formattedHour) - (hourPart * 100)));
       if (hourPart > 23) {
         throw('invalid time format (hour part > 23) in ' + formattedHour);
       }
@@ -221,15 +248,17 @@
     }
   };
 
-  function renderOutput($container, data){
-    return $container.append(data);
+  function renderOutput($container, output) {
+    return $container.append(output);
   }
+
   $.fn.openingHours = function (data) {
-    try{
+    try {
       validateData(data);
-      addMessages(data);
+      addMessages(data.messages);
+      configureMoment();
       return renderOutput(this, getFormattedResult(data));
-    }catch(e){
+    } catch (e) {
       console.warn(e);
       return renderOutput(this, 'Error!');
     }
