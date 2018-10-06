@@ -1,0 +1,28 @@
+{
+  "name": "opening-hours",
+  "version": "1.0.0",
+  "description": "JQuery plugin for displaying business hours (current status, when it is closing, when it is opening etc.)",
+  "main": "opening-hours.js",
+  "dependencies": {
+    "requirejs": "^2.3.6"
+  },
+  "devDependencies": {
+    "jasmine-core": "^3.2.1",
+    "jquery": "^3.3.1",
+    "karma": "^3.0.0",
+    "karma-cli": "*",
+    "karma-jasmine": "*",
+    "karma-phantomjs-launcher": "*",
+    "karma-requirejs": "*",
+    "moment": "^2.22.2"
+  },
+  "scripts": {
+    "test": "karma start"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/hindus-pl/opening-hours/issues"
+  },
+  "homepage": "https://github.com/hindus-pl/opening-hours#readme"
+}
