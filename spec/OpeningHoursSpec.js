@@ -130,7 +130,44 @@ define(['jquery', 'moment'], function ($, moment) {
       });
     });
 
-    describe('closing in', function () {
+
+    describe('closing in / opening in when opening times are full hours', function () {
+      beforeEach(function(){
+        defaultConf = {
+          show: 'closing-in',
+          hours: {
+            monday: [[8.00, 18.00]]
+          }
+        };
+      });
+      describe('opening in', function(){
+        it('should show opening tomorrow', function (done) {
+          expected = 'we are opening tomorrow at 8:00';
+          testByDateAndHtml('07-10-2018 17:40', done); // Sunday
+        });
+        it('should show opening on Monday', function (done) {
+          expected = 'we are opening on Monday at 8:00';
+          testByDateAndHtml('06-10-2018 17:40', done); // Saturday
+        });
+        it('should show opening in two hours', function (done) {
+          expected = 'we are opening in 2 h. at 8:00';
+          testByDateAndHtml('08-10-2018 6:00', done); // Monday
+        });
+      });
+      describe('closing in', function(){
+        it('should show closing in 20 min', function (done) {
+          expected = 'we are closing in 20 min. at 18:00';
+          testByDateAndHtml('08-10-2018 17:40', done); // Monday
+        });
+        it('should show closing in 9h 20 min', function (done) {
+          expected = 'we are closing in 9 h. 20 min. at 18:00';
+          testByDateAndHtml('08-10-2018 8:40', done); // Monday
+        });
+      });
+    });
+
+
+    describe('closing in / opening in when opening times are not full hours', function () {
       beforeEach(function(){
         defaultConf = {
           show: 'closing-in',
@@ -142,25 +179,25 @@ define(['jquery', 'moment'], function ($, moment) {
       describe('opening in', function(){
         it('should show opening tomorrow', function (done) {
           expected = 'we are opening tomorrow at 8:30';
-          testByDateAndHtml('07-10-2018 17:40', done);
+          testByDateAndHtml('07-10-2018 17:40', done); // Sunday
         });
-        it('should show opening in Monday', function (done) {
-          expected = 'we are opening in Monday at 8:30';
-          testByDateAndHtml('06-10-2018 17:40', done);
+        it('should show opening on Monday', function (done) {
+          expected = 'we are opening on Monday at 8:30';
+          testByDateAndHtml('06-10-2018 17:40', done); // Saturday
         });
         it('should show opening in two hours', function (done) {
           expected = 'we are opening in 2 h. at 8:30';
-          testByDateAndHtml('08-10-2018 6:30', done);
+          testByDateAndHtml('08-10-2018 6:30', done); // Monday
         });
       });
       describe('closing in', function(){
         it('should show closing in 50 min', function (done) {
           expected = 'we are closing in 50 min. at 18:30';
-          testByDateAndHtml('08-10-2018 17:40', done);
+          testByDateAndHtml('08-10-2018 17:40', done); // Monday
         });
         it('should show closing in 9h 50 min', function (done) {
           expected = 'we are closing in 9 h. 50 min. at 18:30';
-          testByDateAndHtml('08-10-2018 8:40', done);
+          testByDateAndHtml('08-10-2018 8:40', done); // Monday
         });
       });
     });

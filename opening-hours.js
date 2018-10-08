@@ -9,7 +9,8 @@
     closing_in: 'we are closing',
     opening_in: 'we are opening',
     tomorrow: 'tomorrow',
-    in: 'in',
+    in: 'in', // like in 2 days
+	  on: 'on', // like on Monday
     days: 'days',
     at: 'at',
     hours: 'h.',
@@ -193,7 +194,7 @@
         calendar: {
           nextDay: '[' + messages.tomorrow + '] [' + messages.at + '] H:mm',
           sameDay: '[' + messages.at + '] H:mm',
-          nextWeek: '[' + messages.in + '] dddd [' + messages.at + '] H:mm'
+          nextWeek: '[' + messages.on + '] dddd [' + messages.at + '] H:mm'
         },
         weekdays: messages.weekDays
       });
