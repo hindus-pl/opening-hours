@@ -16,12 +16,15 @@ module.exports = function (config) {
       {pattern: './opening-hours.js', included: false} // this is where are your source files, please do not include them!
     ],
     exclude: [],
-    reporters: ['progress'],
+    reporters: ['progress', 'coverage'],
     port: 9876,
     colors: true,
     logLevel: config.LOG_INFO,
     autoWatch: false,
     browsers: ['PhantomJS'],
-    singleRun: true
+    singleRun: true,
+    preprocessors: {
+      './opening-hours.js': ['coverage'],
+    },
   })
 };
