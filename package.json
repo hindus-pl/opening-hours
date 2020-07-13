@@ -14,6 +14,7 @@
     "karma-jasmine": "*",
     "karma-phantomjs-launcher": "*",
     "karma-requirejs": "*",
+    "karma-coverage": "*",
     "moment": "^2.22.2"
   },
   "scripts": {
